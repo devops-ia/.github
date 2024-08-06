@@ -21,6 +21,7 @@ Our primary focus areas include:
 Here are some of our most notable repositories:
 
 * [helm-opencti](https://github.com/DevOps-IA/helm-opencti): A Helm chart for deploying OpenCTI, a comprehensive threat intelligence platform, on Kubernetes.
+* [helm-steampipe](https://github.com/DevOps-IA/helm-steampipe): A Helm chart for deploying Steampipe.
 * [helm-charts](https://github.com/DevOps-IA/helm-charts): A collection of Helm charts for various applications and services, maintained and curated by DevOps IA.
 * [aws-ssh-key-lambda-rotation](https://github.com/devops-ia/aws-ssh-key-lambda-rotation): Provides an automated alternative for SSH key rotation with AWS services.
 
