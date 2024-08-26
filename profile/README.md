@@ -20,10 +20,11 @@ Our primary focus areas include:
 
 Here are some of our most notable repositories:
 
-* [helm-opencti](https://github.com/DevOps-IA/helm-opencti): A Helm chart for deploying OpenCTI, a comprehensive threat intelligence platform, on Kubernetes.
-* [helm-steampipe](https://github.com/DevOps-IA/helm-steampipe): A Helm chart for deploying Steampipe.
-* [helm-charts](https://github.com/DevOps-IA/helm-charts): A collection of Helm charts for various applications and services, maintained and curated by DevOps IA.
-* [aws-ssh-key-lambda-rotation](https://github.com/devops-ia/aws-ssh-key-lambda-rotation): Provides an automated alternative for SSH key rotation with AWS services.
+* [helm-opencti](https://github.com/devops-ia/helm-opencti): A Helm chart for Open Cyber Threat Intelligence Platform.
+* [helm-openbas](https://github.com/devops-ia/helm-openbas): A Helm chart for Open Breach and Attack Simulation Platform.
+* [helm-steampipe](https://github.com/devops-ia/helm-steampipe): A Helm chart for deploying Steampipe.
+* [terraform-global-naming](https://github.com/devops-ia/terraform-global-naming): Terraform module for global naming conventions.
+
 
 ## Get Involved
 
