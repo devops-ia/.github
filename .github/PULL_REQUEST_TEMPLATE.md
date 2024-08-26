@@ -18,15 +18,23 @@ PR Steps:
 4) Please check the results.
 5) We would like these checks to pass before we even continue reviewing your changes.
 -->
+
 #### What this PR does / why we need it:
 
+<!--
+List the things that your PR does. If it fixes a bug or resolves a feature request, be sure to link to that issue.
+-->
+
 #### Which issue this PR fixes
-*(optional, in `fixes #<issue number>(, fixes #<issue_number>, ...)` format, will close that issue when PR gets merged)*
-  - fixes #
+
+- fixes #<issue_number>
 
 #### Special notes for your reviewer:
+
+<!--
+Complete with your notes. If not applicable, remove this section or set N/A
+-->
 
 #### Checklist
 
 - [ ] [DCO](https://github.com/devops-ia/.github/blob/main/CONTRIBUTING.md) signed
-- [ ] Chart version bumped
