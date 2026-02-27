@@ -3,17 +3,20 @@ name: EditorConfig Checker
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   editorconfig:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
       - name: Use editorConfig Checker
-        uses: editorconfig-checker/action-editorconfig-checker@main
+        uses: editorconfig-checker/action-editorconfig-checker@3c774f73de01cbec4dc63f87a14f9a5d7cd5b38c # v2.0.0
 
       - name: Run editorConfig checker
         run: editorconfig-checker

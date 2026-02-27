@@ -1,0 +1,39 @@
+name: Auto-assign Issue
+
+on:
+  workflow_call:
+    inputs:
+      teams:
+        description: Comma-separated list of teams to assign
+        required: true
+        type: string
+      remove_previous_assignees:
+        description: Remove previously assigned users/teams before assigning
+        required: false
+        type: boolean
+        default: true
+      num_of_assignee:
+        description: Number of assignees to pick per team
+        required: false
+        type: number
+        default: 0
+    secrets:
+      PAT_GITHUB:
+        required: true
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-assign issue
+        uses: pozil/auto-assign-issue@39c06395cbac76e79afc4ad4e5c5c6db6ecfdd2e # v2.2.0
+        with:
+          repo-token: ${{ secrets.PAT_GITHUB }}
+          teams: ${{ inputs.teams }}
+          removePreviousAssignees: ${{ inputs.remove_previous_assignees }}
+          numOfAssignee: ${{ inputs.num_of_assignee }}

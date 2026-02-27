@@ -1,0 +1,49 @@
+name: Lock Threads
+
+on:
+  workflow_call:
+    inputs:
+      issue_inactive_days:
+        description: Number of days an issue must be closed before locking
+        required: false
+        type: string
+        default: "30"
+      pr_inactive_days:
+        description: Number of days a PR must be closed before locking
+        required: false
+        type: string
+        default: "30"
+      issue_comment:
+        description: Comment to post when locking an issue
+        required: false
+        type: string
+        default: >
+          I'm going to lock this issue because it has been closed for _30 days_ ⏳. This helps our maintainers find and focus on the active issues.
+          If you have found a problem that seems similar to this, please open a new issue and complete the issue template so we can capture all the details necessary to investigate further.
+      pr_comment:
+        description: Comment to post when locking a PR
+        required: false
+        type: string
+        default: >
+          I'm going to lock this pull request because it has been closed for _30 days_ ⏳. This helps our maintainers find and focus on the active issues.
+          If you have found a problem that seems related to this change, please open a new issue and complete the issue template so we can capture all the details necessary to investigate further.
+    secrets:
+      PAT_GITHUB:
+        required: true
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dessant/lock-threads@7266a7ce5c1df01b1c6db85bf8cd86c737dadbe7 # v6.0.0
+        with:
+          github-token: ${{ secrets.PAT_GITHUB }}
+          issue-comment: ${{ inputs.issue_comment }}
+          issue-inactive-days: ${{ inputs.issue_inactive_days }}
+          pr-comment: ${{ inputs.pr_comment }}
+          pr-inactive-days: ${{ inputs.pr_inactive_days }}

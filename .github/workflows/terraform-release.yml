@@ -1,0 +1,46 @@
+name: Release Terraform Module
+
+on:
+  workflow_call:
+    inputs:
+      semantic_version:
+        description: Version of semantic-release to use
+        required: false
+        type: string
+        default: "24.2.7"
+      extra_plugins:
+        description: Extra semantic-release plugins (newline-separated)
+        required: false
+        type: string
+        default: |
+          @semantic-release/changelog@6.0.3
+          @semantic-release/git@10.0.1
+          conventional-changelog-conventionalcommits@9.1.0
+    secrets:
+      PAT_GITHUB:
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'devops-ia' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Release
+        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
+        with:
+          semantic_version: ${{ inputs.semantic_version }}
+          extra_plugins: ${{ inputs.extra_plugins }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}

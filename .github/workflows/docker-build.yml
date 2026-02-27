@@ -1,0 +1,140 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_call:
+    inputs:
+      dockerhub_user:
+        description: DockerHub username/organization
+        required: false
+        type: string
+        default: devopsiaci
+      dockerhub_repo:
+        description: DockerHub repository name
+        required: true
+        type: string
+      image_title:
+        description: OCI image title label
+        required: false
+        type: string
+        default: ""
+      image_description:
+        description: OCI image description label
+        required: false
+        type: string
+        default: ""
+      image_authors:
+        description: OCI image authors label
+        required: false
+        type: string
+        default: ialejandro
+      platforms:
+        description: Target build platforms (comma-separated)
+        required: false
+        type: string
+        default: linux/amd64,linux/arm64
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_PASSWORD:
+        required: true
+
+permissions:
+  artifact-metadata: write
+  attestations: write
+  contents: write
+  id-token: write
+  packages: write
+
+jobs:
+  build:
+    name: Build release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Set Docker metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+        with:
+          images: |
+            ${{ inputs.dockerhub_user }}/${{ inputs.dockerhub_repo }}
+            ghcr.io/${{ github.repository }}
+          labels: |
+            org.opencontainers.image.authors=${{ inputs.image_authors }}
+            org.opencontainers.image.description=${{ inputs.image_description }}
+            org.opencontainers.image.maintainer=${{ inputs.image_authors }}
+            org.opencontainers.image.title=${{ inputs.image_title || inputs.dockerhub_repo }}
+            org.opencontainers.image.vendor=DevOps IA
+          flavor: |
+            latest=auto
+          tags: |
+            type=semver,pattern={{version}}
+            type=sha,enable=false
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Cache Docker layers
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: "[DOCKERHUB] Log in to Docker Hub"
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: "[GHCR] Log in to the Container registry"
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          context: .
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: ${{ inputs.platforms }}
+          push: true
+          sbom: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+      - name: "[DOCKERHUB] Update Docker registry description"
+        uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa # v5.0.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: ${{ inputs.dockerhub_user }}/${{ inputs.dockerhub_repo }}
+
+      - name: "[GHCR] Generate artifact attestation"
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      # Temp fix: https://github.com/docker/build-push-action/issues/252
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache

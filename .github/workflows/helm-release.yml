@@ -1,0 +1,126 @@
+name: Release Helm Chart (single)
+
+on:
+  workflow_call:
+    inputs:
+      chart_name:
+        description: Name of the Helm chart (directory under charts/)
+        required: true
+        type: string
+      charts_dir:
+        description: Directory containing charts
+        required: false
+        type: string
+        default: charts
+      tag:
+        description: Chart version tag to release (overrides semantic-release, e.g. v1.2.3)
+        required: false
+        type: string
+        default: ""
+      cr_config:
+        description: Path to chart-releaser config file
+        required: false
+        type: string
+        default: .github/cr.yaml
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.tag != '' && inputs.tag || '' }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Semantic Release (dry-run)
+        if: inputs.tag == ''
+        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
+        id: semantic_release
+        with:
+          dry_run: true
+          branch: main
+          tag_format: ${version}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Chart version
+        id: chart_version
+        if: steps.semantic_release.outputs.new_release_published == 'true' || inputs.tag != ''
+        env:
+          TAG_INPUT: ${{ inputs.tag }}
+          NEW_RELEASE_TAG: ${{ steps.semantic_release.outputs.new_release_git_tag }}
+          CHARTS_DIR: ${{ inputs.charts_dir }}
+          CHART_NAME: ${{ inputs.chart_name }}
+        run: |
+          VERSION="${TAG_INPUT:-${NEW_RELEASE_TAG}}"
+          VERSION="${VERSION#v}"
+          sed -i "s/^version: .*/version: ${VERSION}/g" "${CHARTS_DIR}/${CHART_NAME}/Chart.yaml"
+          echo "CHART_VERSION=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        id: tag_exists
+        if: steps.chart_version.outputs.CHART_VERSION != '' && inputs.tag == ''
+        run: |
+          TAG_EXISTS=true
+          if ! [ $(git tag -l "v${{ steps.chart_version.outputs.CHART_VERSION }}") ]; then
+              TAG_EXISTS=false
+          fi
+          echo "TAG_EXISTS=${TAG_EXISTS}" >> $GITHUB_OUTPUT
+
+      - name: Set up Helm
+        if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+
+      - name: Run chart-releaser
+        if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
+        uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f # v1.7.0
+        with:
+          charts_dir: ${{ inputs.charts_dir }}
+          config: ${{ inputs.cr_config }}
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_SKIP_EXISTING: true
+
+      - name: Login to the Container registry
+        if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Cosign
+        if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+
+      - name: Install Oras
+        if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
+        uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6 # v1.2.4
+
+      # ref: https://github.com/backstage/charts/blob/88240ce7a0726e3773ee0e4866fbe6325c15267b/.github/workflows/release.yml#L50
+      - name: Publish and Sign OCI Charts
+        if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
+        env:
+          CHARTS_DIR: ${{ inputs.charts_dir }}
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          for chart in $(find .cr-release-packages -name '*.tgz' -print); do
+            helm push "${chart}" oci://ghcr.io/${GITHUB_REPOSITORY} |& tee helm-push-output.log
+            file_name="${chart##*/}"
+            chart_name="${file_name%-*}"
+            digest=$(awk -F "[, ]+" '/Digest/{print $NF}' < helm-push-output.log)
+            cosign sign -y "ghcr.io/${GITHUB_REPOSITORY}/${chart_name}@${digest}"
+
+            oras push "ghcr.io/${GITHUB_REPOSITORY}/${chart_name}:artifacthub.io" \
+              "./${CHARTS_DIR}/${chart_name}/artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml"
+          done

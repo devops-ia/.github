@@ -1,0 +1,80 @@
+name: Lint and Test Helm Charts
+
+on:
+  workflow_call:
+    inputs:
+      ct_config:
+        description: Path to chart-testing config file
+        required: false
+        type: string
+        default: .github/ct.yaml
+      yamale_version:
+        description: Yamale version for chart-testing
+        required: false
+        type: string
+        default: "6.0.0"
+      helm_extra_args:
+        description: Extra arguments passed to helm install
+        required: false
+        type: string
+        default: "--timeout 900s --debug"
+
+permissions:
+  contents: read
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: 3.x
+          check-latest: true
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
+        with:
+          yamale_version: ${{ inputs.yamale_version }}
+
+      - name: Run chart-testing (list-changed)
+        id: list-changed
+        env:
+          CT_CONFIG: ${{ inputs.ct_config }}
+        run: |
+          changed=$(ct list-changed --config "$CT_CONFIG")
+          if [[ -n "${changed}" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run chart-testing (lint)
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          CT_CONFIG: ${{ inputs.ct_config }}
+        run: ct lint --config "$CT_CONFIG"
+
+      - name: Create kind cluster
+        if: steps.list-changed.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: helm/kind-action@92086f6be054225fa813e0a4b13787fc9088faab # v1.13.0
+
+      - name: Run ct install
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          CT_CONFIG: ${{ inputs.ct_config }}
+          HELM_EXTRA_ARGS: ${{ inputs.helm_extra_args }}
+        run: ct install --config "$CT_CONFIG" --helm-extra-args "$HELM_EXTRA_ARGS"
+
+      - name: "(workflow_dispatch) Run ct install"
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          CT_CONFIG: ${{ inputs.ct_config }}
+          HELM_EXTRA_ARGS: ${{ inputs.helm_extra_args }}
+        run: ct install --config "$CT_CONFIG" --helm-extra-args "$HELM_EXTRA_ARGS" --all

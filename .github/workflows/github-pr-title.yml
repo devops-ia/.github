@@ -1,0 +1,61 @@
+name: Validate PR Title
+
+on:
+  workflow_call:
+    inputs:
+      types:
+        description: Allowed conventional commit types (newline-separated)
+        required: false
+        type: string
+        default: |
+          fix
+          feat
+          docs
+          ci
+          chore
+      require_scope:
+        description: Whether a scope must always be provided
+        required: false
+        type: boolean
+        default: false
+      subject_pattern:
+        description: Regex pattern the subject must match
+        required: false
+        type: string
+        default: "^[A-Za-z].+$"
+      wip:
+        description: Allow [WIP] prefix to skip validation
+        required: false
+        type: boolean
+        default: true
+      validate_single_commit:
+        description: Validate commit message for single-commit PRs
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      PAT_GITHUB:
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
+        with:
+          types: ${{ inputs.types }}
+          requireScope: ${{ inputs.require_scope }}
+          subjectPattern: ${{ inputs.subject_pattern }}
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            starts with an uppercase character.
+          wip: ${{ inputs.wip }}
+          validateSingleCommit: ${{ inputs.validate_single_commit }}

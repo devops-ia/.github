@@ -1,0 +1,72 @@
+name: Mark or Close Stale Issues and PRs
+
+on:
+  workflow_call:
+    inputs:
+      days_before_stale:
+        description: Number of days of inactivity before marking as stale
+        required: false
+        type: number
+        default: 30
+      days_before_close:
+        description: Number of days after stale mark before closing
+        required: false
+        type: number
+        default: 10
+      stale_issue_label:
+        description: Label applied to stale issues
+        required: false
+        type: string
+        default: stale
+      stale_pr_label:
+        description: Label applied to stale PRs
+        required: false
+        type: string
+        default: stale
+      exempt_issue_labels:
+        description: Comma-separated labels that exempt issues from being staled
+        required: false
+        type: string
+        default: "bug,wip,on-hold"
+      exempt_pr_labels:
+        description: Comma-separated labels that exempt PRs from being staled
+        required: false
+        type: string
+        default: "bug,wip,on-hold"
+      delete_branch:
+        description: Delete branch when PR is closed
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      PAT_GITHUB:
+        required: true
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@997185467fa4f803885201cee163a9f38240193d # v10.1.1
+        with:
+          repo-token: ${{ secrets.PAT_GITHUB }}
+          days-before-stale: ${{ inputs.days_before_stale }}
+          stale-issue-label: ${{ inputs.stale_issue_label }}
+          stale-pr-label: ${{ inputs.stale_pr_label }}
+          stale-issue-message: |
+            This issue has been automatically marked as stale because it has been open ${{ inputs.days_before_stale }} days
+            with no activity. Remove stale label or comment or this issue will be closed in ${{ inputs.days_before_close }} days
+          stale-pr-message: |
+            This PR has been automatically marked as stale because it has been open ${{ inputs.days_before_stale }} days
+            with no activity. Remove stale label or comment or this PR will be closed in ${{ inputs.days_before_close }} days
+          exempt-issue-labels: ${{ inputs.exempt_issue_labels }}
+          exempt-pr-labels: ${{ inputs.exempt_pr_labels }}
+          exempt-all-milestones: true
+          days-before-close: ${{ inputs.days_before_close }}
+          delete-branch: ${{ inputs.delete_branch }}
+          close-issue-message: This issue was automatically closed because of stale in ${{ inputs.days_before_close }} days
+          close-pr-message: This PR was automatically closed because of stale in ${{ inputs.days_before_close }} days
