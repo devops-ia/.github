@@ -1,6 +1,6 @@
 name: Question / Help
 description: Ask a question or request help using this project
-title: "[repo] Your question"
+title: "Your question"
 labels: [question]
 body:
   - type: markdown

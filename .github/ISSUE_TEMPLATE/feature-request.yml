@@ -1,6 +1,6 @@
 name: Feature Request
 description: Suggest an improvement or new feature
-title: "[repo] Brief description of the feature"
+title: "Brief description of the feature"
 labels: [enhancement]
 body:
   - type: markdown
