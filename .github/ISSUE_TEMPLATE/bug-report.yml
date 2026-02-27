@@ -1,0 +1,89 @@
+name: Bug Report
+description: Report a bug in any project
+title: "[repo] Brief description of the bug"
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please be cautious with sensitive information or logs while filing this issue.
+        Before submitting, check for [existing issues](../../issues) to avoid duplicates.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce-bug
+    attributes:
+      label: Steps to reproduce
+      description: Step-by-step instructions to reproduce the behavior.
+      placeholder: |
+        1. ...
+        2. ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-result
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-result
+    attributes:
+      label: Actual behavior
+      description: What actually happened. Include any error messages or logs.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / Release
+      description: The version of the project where you encountered this bug.
+      placeholder: "1.2.3"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: Your OS and version.
+      placeholder: "Ubuntu 24.04 / macOS 15 / Windows 11"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or output
+      description: Paste any relevant log output. This will be formatted as code automatically.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Security
+      description: If this is a vulnerability, report it privately via [GitHub Security Advisory](../../security/advisories/new) instead of opening a public issue.
+      options:
+        - label: This issue is security-related
+
+  - type: textarea
+    id: more-info
+    attributes:
+      label: Additional context
+      description: Any other context or screenshots that may help diagnose the issue.
+    validations:
+      required: false

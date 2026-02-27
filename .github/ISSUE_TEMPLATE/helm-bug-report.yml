@@ -1,0 +1,101 @@
+name: Helm Bug Report
+description: Report a bug in a Helm chart
+title: "[chart-name] Brief description of the bug"
+labels: [bug, helm]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please be cautious with sensitive information or logs while filing this issue.
+        Before submitting, check for [existing issues](../../issues) to avoid duplicates.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce-bug
+    attributes:
+      label: Steps to reproduce
+      description: Step-by-step instructions to reproduce the behavior.
+      placeholder: |
+        1. Install the chart with ...
+        2. Configure ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-result
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: input
+    id: chart-version
+    attributes:
+      label: Chart version
+      description: The version of the chart where you encountered this bug.
+      placeholder: "1.2.3"
+    validations:
+      required: true
+
+  - type: input
+    id: helm-version
+    attributes:
+      label: Helm version
+      description: Output of `helm version`
+      placeholder: "v3.x.x"
+    validations:
+      required: true
+
+  - type: input
+    id: kubectl-version
+    attributes:
+      label: kubectl version
+      description: Output of `kubectl version`
+      placeholder: "v1.x.x"
+    validations:
+      required: true
+
+  - type: textarea
+    id: helm-command
+    attributes:
+      label: Helm command used
+      description: The exact command you ran when the issue occurred.
+      placeholder: "helm install [RELEASE] repo/chart --version [VERSION] -f values.yaml --debug"
+    validations:
+      required: true
+
+  - type: textarea
+    id: chart-values
+    attributes:
+      label: Custom values (values.yaml diff)
+      description: Only include values that differ from the chart defaults. Enter `NONE` if unchanged.
+      placeholder: |
+        key: value
+      render: yaml
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Security
+      description: If this is a vulnerability, report it privately via [GitHub Security Advisory](../../security/advisories/new) instead of opening a public issue.
+      options:
+        - label: This issue is security-related
+
+  - type: textarea
+    id: more-info
+    attributes:
+      label: Additional context
+      description: Any other context, logs, or screenshots that may help diagnose the issue.
+    validations:
+      required: false
