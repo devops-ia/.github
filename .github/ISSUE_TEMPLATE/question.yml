@@ -1,0 +1,42 @@
+name: Question / Help
+description: Ask a question or request help using this project
+title: "Your question"
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template if you're stuck or need guidance. For bugs, use the Bug Report template instead.
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to achieve?
+      description: Describe your goal or what you are trying to do.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: Describe what you've already attempted and any results or errors you encountered.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / Release
+      description: The version of the project you are using.
+      placeholder: "1.2.3"
+    validations:
+      required: false
+
+  - type: textarea
+    id: more-info
+    attributes:
+      label: Additional context
+      description: Any other relevant context, configuration, or screenshots.
+    validations:
+      required: false

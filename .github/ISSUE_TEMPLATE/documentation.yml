@@ -1,0 +1,54 @@
+name: Documentation Issue
+description: Report missing, incorrect, or unclear documentation
+title: "Brief description of the documentation issue"
+labels: [documentation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Good documentation is important to us. Thanks for helping improve it!
+
+  - type: input
+    id: location
+    attributes:
+      label: Where is the documentation issue?
+      description: URL, file path, or section name where the issue is located.
+      placeholder: "https://... or README.md#section"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Type of issue
+      options:
+        - Missing documentation
+        - Incorrect or outdated information
+        - Unclear or confusing explanation
+        - Broken link or reference
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-state
+    attributes:
+      label: What's wrong?
+      description: Describe what is missing, incorrect, or unclear.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: If you have a specific suggestion for how to fix or improve it, share it here.
+    validations:
+      required: false
+
+  - type: textarea
+    id: more-info
+    attributes:
+      label: Additional context
+    validations:
+      required: false
