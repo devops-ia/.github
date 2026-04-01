@@ -79,7 +79,7 @@ jobs:
 
       - name: Set up Helm
         if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
 
       - name: Run chart-releaser
         if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
@@ -93,7 +93,7 @@ jobs:
 
       - name: Login to the Container registry
         if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -101,7 +101,7 @@ jobs:
 
       - name: Install Cosign
         if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
-        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
 
       - name: Install Oras
         if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
