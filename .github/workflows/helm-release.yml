@@ -22,6 +22,16 @@ on:
         required: false
         type: string
         default: .github/cr.yaml
+    secrets:
+      gpg_key:
+        description: Base64-encoded exported GPG secret keyring (`gpg --export-secret-keys | base64`) used to sign chart packages. Signing is skipped if unset.
+        required: false
+      gpg_key_name:
+        description: GPG key identity (uid or key ID) matching gpg_key
+        required: false
+      gpg_passphrase:
+        description: Passphrase for the GPG private key
+        required: false
 permissions:
   contents: write
   packages: write
@@ -81,6 +91,17 @@ jobs:
         if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
 
+      - name: Import GPG signing key
+        id: gpg_import
+        if: (steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != '') && secrets.gpg_key != ''
+        env:
+          GPG_KEY: ${{ secrets.gpg_key }}
+          GPG_PASSPHRASE: ${{ secrets.gpg_passphrase }}
+        run: |
+          echo "${GPG_KEY}" | base64 -d > "${RUNNER_TEMP}/keyring.gpg"
+          echo "${GPG_PASSPHRASE}" > "${RUNNER_TEMP}/passphrase.txt"
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
       - name: Run chart-releaser
         if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
         uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f # v1.7.0
@@ -90,6 +111,10 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           CR_SKIP_EXISTING: true
+          CR_SIGN: ${{ steps.gpg_import.outputs.enabled == 'true' }}
+          CR_KEY: ${{ secrets.gpg_key_name }}
+          CR_KEYRING: ${{ runner.temp }}/keyring.gpg
+          CR_PASSPHRASE_FILE: ${{ runner.temp }}/passphrase.txt
 
       - name: Login to the Container registry
         if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
