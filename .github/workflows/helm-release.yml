@@ -22,6 +22,11 @@ on:
         required: false
         type: string
         default: .github/cr.yaml
+      enable_signing:
+        description: Sign chart packages with GPG. Off by default across all callers — opt in explicitly once gpg_key/gpg_key_name/gpg_passphrase secrets are confirmed working.
+        required: false
+        type: boolean
+        default: false
     secrets:
       gpg_key:
         description: Base64-encoded exported GPG secret keyring (`gpg --export-secret-keys | base64`) used to sign chart packages. Signing is skipped if unset.
@@ -93,13 +98,37 @@ jobs:
 
       - name: Import GPG signing key
         id: gpg_import
-        if: (steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != '') && secrets.gpg_key != ''
+        if: inputs.enable_signing && (steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != '')
         env:
           GPG_KEY: ${{ secrets.gpg_key }}
           GPG_PASSPHRASE: ${{ secrets.gpg_passphrase }}
         run: |
-          echo "${GPG_KEY}" | base64 -d > "${RUNNER_TEMP}/keyring.gpg"
+          # secrets cannot be referenced in `if:` conditionals, so the
+          # enable/disable check happens here instead
+          if [ -z "${GPG_KEY}" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! echo "${GPG_KEY}" | base64 -d > "${RUNNER_TEMP}/keyring.gpg"; then
+            echo "::error::gpg_key secret is not valid base64"
+            exit 1
+          fi
+
+          size=$(stat -c%s "${RUNNER_TEMP}/keyring.gpg" 2>/dev/null || stat -f%z "${RUNNER_TEMP}/keyring.gpg")
+          echo "Decoded keyring size: ${size} bytes"
+          if [ "${size}" -eq 0 ]; then
+            echo "::error::decoded keyring is empty — gpg_key secret was likely truncated/mis-set"
+            exit 1
+          fi
+
           echo "${GPG_PASSPHRASE}" > "${RUNNER_TEMP}/passphrase.txt"
+
+          echo "Identities found in the imported keyring (compare against the gpg_key_name secret):"
+          if ! gpg --show-keys "${RUNNER_TEMP}/keyring.gpg"; then
+            echo "::error::keyring failed to parse as OpenPGP data — gpg_key secret content is invalid"
+            exit 1
+          fi
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Run chart-releaser
