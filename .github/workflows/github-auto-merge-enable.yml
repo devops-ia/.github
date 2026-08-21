@@ -1,0 +1,53 @@
+name: Enable Auto-merge
+
+on:
+  workflow_call:
+    inputs:
+      merge_method:
+        description: Merge method to use for auto-merge (merge, squash, rebase)
+        required: false
+        type: string
+        default: squash
+      team:
+        description: devops-ia team slug allowed to trigger auto-merge
+        required: false
+        type: string
+        default: devops-ia
+    secrets:
+      PAT_GITHUB:
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check allowed author
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.PAT_GITHUB }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          TEAM: ${{ inputs.team }}
+        run: |
+          if [ "$AUTHOR" = "dependabot[bot]" ]; then
+            echo "allowed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          state=$(gh api "orgs/devops-ia/teams/$TEAM/memberships/$AUTHOR" --jq '.state' 2>/dev/null || true)
+          if [ "$state" = "active" ]; then
+            echo "allowed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "allowed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Enable auto-merge
+        if: steps.check.outputs.allowed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_METHOD: ${{ inputs.merge_method }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto "--$MERGE_METHOD" "$PR_URL"
