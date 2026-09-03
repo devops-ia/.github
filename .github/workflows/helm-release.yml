@@ -66,7 +66,7 @@ jobs:
           branch: main
           tag_format: ${version}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
 
       - name: Update Chart version
         id: chart_version
@@ -138,7 +138,7 @@ jobs:
           charts_dir: ${{ inputs.charts_dir }}
           config: ${{ inputs.cr_config }}
         env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_TOKEN: "${{ secrets.PAT_GITHUB }}"
           CR_SKIP_EXISTING: true
           CR_SIGN: ${{ steps.gpg_import.outputs.enabled == 'true' }}
           CR_KEY: ${{ secrets.gpg_key_name }}
@@ -151,7 +151,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.PAT_GITHUB }}
 
       - name: Install Cosign
         if: steps.tag_exists.outputs.TAG_EXISTS == 'false' || inputs.tag != ''
