@@ -44,6 +44,15 @@ jobs:
             echo "allowed=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # GITHUB_TOKEN (github-actions[bot]) approves, since the PAT owner cannot approve their own PRs.
+      - name: Approve
+        if: steps.check.outputs.allowed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr review --approve "$PR_URL"
+
+      # PAT merges so the push to main triggers release workflows (GITHUB_TOKEN merges do not).
       - name: Enable auto-merge
         if: steps.check.outputs.allowed == 'true'
         env:
