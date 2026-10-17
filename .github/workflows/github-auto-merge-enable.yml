@@ -31,7 +31,17 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT_GITHUB }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           TEAM: ${{ inputs.team }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
+          # Claude-authored PRs are merged by hand: Co-Authored-By trailer in any commit, or the PR body attribution.
+          if gh pr view "$PR_URL" --json body,commits \
+            --jq '[.body, (.commits[].messageBody)] | map(. // "") | any(test("noreply@anthropic\\.com|Generated with \\[Claude Code\\]"))' \
+            | grep -qx true; then
+            echo "PR has Claude attribution: auto-merge skipped, merge manually."
+            echo "allowed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           if [ "$AUTHOR" = "dependabot[bot]" ]; then
             echo "allowed=true" >> "$GITHUB_OUTPUT"
             exit 0
